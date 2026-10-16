@@ -352,9 +352,7 @@ class TestKlipperParamCollection:
         # (the old frontend regex required the key immediately after "{").
         cfg = _write(
             tmp_path / "printer.cfg",
-            "[gcode_macro PARAMS]\n"
-            "gcode:\n"
-            "    SET X={ params.LENGTH }\n",
+            "[gcode_macro PARAMS]\n" "gcode:\n" "    SET X={ params.LENGTH }\n",
         )
         macros = KlipperMacroParser.parse_macros(cfg)
         assert macros[0]["has_params"] is True

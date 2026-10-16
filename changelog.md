@@ -1,3 +1,7 @@
+2026-10-07: keep [include ...] targets and multi-segment paths as a single token in the editor's Monaco tokenizer (no colour split right after the slash), without swallowing the closing bracket
+2026-10-07: keep file-path values (`./`, `../`, `~/`, `/`) as a single token in the editor's Monaco tokenizer instead of re-colouring them as separate variable words
+2026-10-07: add direct Klipper documentation links — a "Klipper Documentation" link in the config editor (Config_Reference) and save_variables/SAVE_VARIABLE links in the Save Variables dialog
+2026-10-07: extend the editor's Monaco language definition with the full set of Klipper config sections from Config_Reference (added probe_eddy_current, smart_effector, fan_generic, led, TMC drivers, load_cell(_probe), z_thermal_adjust, axis_twist_compensation, accelerometer chips, display_*, carriage, angle, and more)
 2026-10-07: let long variable names and "Used by" macro lists wrap in the Save Variables dialog table instead of being cut off (code defaulted to white-space: nowrap)
 2026-10-07: fix a 500 on /config/save when saving an empty config file — the saveCfg client sent an empty body as `[]` (array), which crashed the file write; keep empty content a string and coerce list/None payloads to text in save_cfg
 2026-10-07: fix a 500 on /config/check when saving an empty config file — the editor client sent an empty body as `[]` (array), which crashed configparser's read_string; keep empty content a string and coerce list/None payloads to text backend-side

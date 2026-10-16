@@ -253,9 +253,7 @@ class TestSaveCfg:
         lines = ["[probe]", "x_offset = 0.0"]
         result = CfgUtils.save_cfg(plugin_self, lines, "new.cfg", is_new_file=True)
         assert result["status"] == "success"
-        assert (config_dir / "new.cfg").read_text(encoding="utf-8") == "\n".join(
-            lines
-        )
+        assert (config_dir / "new.cfg").read_text(encoding="utf-8") == "\n".join(lines)
 
     def test_save_empty_list_creates_empty_file(self, plugin_self, tmp_path):
         config_dir = tmp_path / "klipper_configs"
@@ -378,9 +376,7 @@ class TestListConfigFiles:
             "[probe]\n", encoding="utf-8"
         )
         (data_dir / "current").mkdir()
-        (data_dir / "current" / "printer.cfg").write_text(
-            "[probe]\n", encoding="utf-8"
-        )
+        (data_dir / "current" / "printer.cfg").write_text("[probe]\n", encoding="utf-8")
         plugin_self.get_plugin_data_folder.return_value = str(data_dir)
 
         with mock.patch("flask.url_for", return_value="/"):

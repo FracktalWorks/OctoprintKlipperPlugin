@@ -252,7 +252,7 @@ def safe_config_subdir(config_path, relative_dir):
         str: the realpath of ``config_path/relative_dir`` when it stays inside
         ``config_path``, otherwise the realpath of ``config_path``.
     """
-    base = (os.path.realpath(os.path.expanduser(config_path)) if config_path else "")
+    base = os.path.realpath(os.path.expanduser(config_path)) if config_path else ""
     if not base or not relative_dir:
         return base
     target = os.path.realpath(os.path.join(base, relative_dir))

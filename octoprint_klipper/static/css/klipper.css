@@ -274,6 +274,14 @@ div#klipper_backups_dialog div.modal-body textarea {
   white-space: nowrap;
 }
 
+/* Direct Klipper documentation links in the editor / dialogs. */
+.klipper-docs-link {
+  margin: 6px 0 2px;
+}
+.klipper-docs-link a {
+  color: inherit;
+}
+
 /* Keep the action icons on one line so the name column gets the rest. */
 #klipper_backups_dialog td.klipper_baks_action {
   white-space: nowrap;

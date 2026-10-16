@@ -96,8 +96,16 @@ $(function () {
             var all = response.data.files || [];
             // Live duplicates (current/) get their own section; everything else
             // (archive/, configs/, ...) stays in the versioned backups list.
-            self.currentFiles(_.filter(all, function (f) { return f.area === "current"; }));
-            self.backups.updateItems(_.filter(all, function (f) { return f.area !== "current"; }));
+            self.currentFiles(
+              _.filter(all, function (f) {
+                return f.area === "current";
+              }),
+            );
+            self.backups.updateItems(
+              _.filter(all, function (f) {
+                return f.area !== "current";
+              }),
+            );
             self.backups.resetPage();
           } else {
             self.klipperViewModel.consoleMessage("error", "listBakFiles failed");

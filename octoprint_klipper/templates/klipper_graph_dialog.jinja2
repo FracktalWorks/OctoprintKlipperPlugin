@@ -1,7 +1,8 @@
-<div id="klipper_graph_dialog" class="modal hide fade large" tabindex="-1" role="dialog" aria-labelledby="klipper_graph_dialog_label" aria-hidden="true">
+<div id="klipper_graph_dialog" class="modal hide fade large" tabindex="-1" role="dialog"
+   aria-labelledby="klipper_graph_dialog_label" aria-hidden="true">
    <div class="modal-header">
-       <button type="button" class="close" data-dismiss="modal">&times;</button>
-       <h3 >{{ _('Performance Graph') }}</h3>
+      <button type="button" class="close" data-dismiss="modal">&times;</button>
+      <h3>{{ _('Performance Graph') }}</h3>
    </div>
    <div class="modal-body">
       <div class="full-sized-box">
@@ -20,13 +21,16 @@
          <span text-align="left" data-bind="text: status" class="status-label"></span>
          <label class="control-label">
             {{ _('Select') }}
-            <select data-bind="options: availableLogFiles, optionsText: 'name', optionsValue: 'file', value: logFile"></select>
+            <select
+               data-bind="options: availableLogFiles, optionsText: 'name', optionsValue: 'file', value: logFile"></select>
          </label>
-         <button class="btn" data-bind="click: listLogFiles" title="{{ _('Refresh file list') }}"><i class="icon-refresh"></i></button>
+         <button class="btn" data-bind="click: listLogFiles" title="{{ _('Refresh file list') }}"><i
+               class="icon-refresh"></i></button>
          <button class="btn" data-bind="click: loadData"><i class="icon-signal"> </i>{{ _('Analyze Log') }}</button>
          <button class="btn" data-dismiss="modal"><i class="icon-remove"> </i>{{ _('Close') }}</button>
       </form>
-      <textarea readonly id="plugin-klipper-klippylog" rows="31" class="block" data-bind="value: klippylogFile"></textarea>
+      <textarea readonly id="plugin-klipper-klippylog" rows="31" class="block"
+         data-bind="value: klippylogFile"></textarea>
    </div>
 </div>
 <div id="klipper_graph_spinner" class="modal hide fade small" tabindex="-1" role="dialog" aria-hidden="true">

@@ -60,9 +60,20 @@ monaco.languages.setMonarchTokensProvider("klipper_config", {
       // booleans
       [/true|false/i, "constant.language"],
       // known section names inside [ ... ]
-      [/extruder|heater_bed|heater_fan|fan|probe|bltouch|mcu|printer|gcode_macro|display|menu|bed_mesh|bed_screws|bed_tilt|input_shaper|adxl345|temperature_sensor|thermistor|virtual_sdcard|pause_resume|output_pin|neopixel|servo|stepper_[a-z0-9]+|save_variables|idle_timeout|force_move|respond|safe_z_home|z_tilt|quad_gantry_level|screws_tilt_adjust|skew_correction|delayed_gcode|gcode_arcs|gcode_button|firmware_retraction|homing_override|manual_stepper|multi_pin|controller_fan|filament_switch_sensor|hall_filament_width_sensor|temperature_fan|verify_heater|endstop_phase|dual_carriage|extruder_stepper|heater_generic|homing_heaters|static_digital_output|board_pins|dotstar|samd_sercom|sx1509|mcp4018|mcp4451|mcp4728|replicape|tsl1401cl_filament_width_sensor|adc_temperature|resonance_tester|delta_calibrate|bed_mesh|bed_screws|bed_tilt|gcode_macro/i, "storage.type"],
+      // Ordered so that a section name that is a prefix of another comes
+      // later (e.g. fan_generic before fan, probe_eddy_current before probe,
+      // display_data/display_template/display_glyph before display).
+      // Source: https://www.klipper3d.org/Config_Reference.html
+      [/axis_twist_compensation|ad5206|adc_scaled|adc_temperature|ads1x1x|adxl345|angle|bed_mesh|bed_screws|bed_tilt|bltouch|board_pins|bmi160|carriage|controller_fan|delta_calibrate|delayed_gcode|display_data|display_glyph|display_template|display|dotstar|dual_carriage|duplicate_pin_override|endstop_phase|exclude_object|extruder_stepper|extruder|fan_generic|fan|filament_motion_sensor|filament_switch_sensor|firmware_retraction|force_move|gcode_arcs|gcode_button|gcode_macro|hall_filament_width_sensor|heater_bed|heater_fan|heater_generic|homing_heaters|homing_override|icm20948|idle_timeout|input_shaper|led|lis2dw|lis3dh|load_cell_probe|load_cell|manual_stepper|mcp4018|mcp4451|mcp4728|mcu|menu|mpu9250|multi_pin|neopixel|output_pin|palette2|pause_resume|pca9533|pca9632|printer|probe_eddy_current|probe|pwm_cycle_time|pwm_tool|quad_gantry_level|replicape|resonance_tester|respond|safe_z_home|samd_sercom|save_variables|screws_tilt_adjust|sdcard_loop|servo|skew_correction|smart_effector|static_digital_output|static_pwm_clock|stepper_[a-z0-9]+|sx1509|temperature_fan|temperature_probe|temperature_sensor|thermistor|tmc2130|tmc2208|tmc2209|tmc2240|tmc2660|tmc5160|tsl1401cl_filament_width_sensor|verify_heater|virtual_sdcard|z_thermal_adjust|z_tilt/i, "storage.type"],
       // config keys (word before : or =)
       [/[a-zA-Z_][a-zA-Z0-9_]*\s*[:=]/, "variable.name"],
+      // file-path values (./ ../ ~/ /) — keep the whole path one token so it
+      // doesn't get re-coloured as separate variable words; never swallow a
+      // closing bracket
+      [/[.]{1,2}\/[^\s\]]*|~[^\s\]]*|\/[^\s\]]*/, "string.unquoted"],
+      // multi-segment paths / [include ...] targets ("a/b.cfg",
+      // "Neuertest/Sub/file.cfg") — one token
+      [/[a-zA-Z0-9_.~-]+(?:\/[a-zA-Z0-9_.~\-]+)+/, "string.unquoted"],
       // gcode commands
       [/[A-Z][A-Z0-9_]+/, "keyword.operator"],
       // jinja template markers

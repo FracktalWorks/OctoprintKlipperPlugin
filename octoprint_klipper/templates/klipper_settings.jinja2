@@ -147,7 +147,8 @@
               title="{{ _('Reset to default') }}"><i class="icon-undo"></i></button>
           </div>
           <div class="klipper-reset-row">
-            <button type="button" class="btn btn-small" data-bind="click: checkConfigPath, enable: !configPathChecking()"
+            <button type="button" class="btn btn-small"
+              data-bind="click: checkConfigPath, enable: !configPathChecking()"
               title="{{ _('Check the config directory on the server') }}">
               <i class="icon-ok" data-bind="css: configPathChecking() ? 'klipper-spin' : ''"></i>
               {{ _('Check path') }}
@@ -190,7 +191,8 @@
               title="{{ _('Reset to default') }}"><i class="icon-undo"></i></button>
           </div>
           <div class="klipper-reset-row">
-            <button type="button" class="btn btn-small" data-bind="click: checkBaseConfig, enable: !baseConfigChecking()"
+            <button type="button" class="btn btn-small"
+              data-bind="click: checkBaseConfig, enable: !baseConfigChecking()"
               title="{{ _('Check the base config file on the server') }}">
               <i class="icon-ok" data-bind="css: baseConfigChecking() ? 'klipper-spin' : ''"></i>
               {{ _('Check path') }}
@@ -643,7 +645,9 @@
             </td>
           </tr>
         </tbody>
-        <tbody class="klipper-spacer-row"><tr></tr></tbody>
+        <tbody class="klipper-spacer-row">
+          <tr></tr>
+        </tbody>
         <!-- /ko -->
       </table>
     </div>
@@ -943,7 +947,8 @@
       </div>
       <div class="row-fluid">
         <div class="offset10 span2">
-          <a title="{{ _('Add Filter') }}" class="btn btn-primary" data-bind="click: addLogFilter"><i class="fas fa-plus"></i></a>
+          <a title="{{ _('Add Filter') }}" class="btn btn-primary" data-bind="click: addLogFilter"><i
+              class="fas fa-plus"></i></a>
         </div>
       </div>
     </form>

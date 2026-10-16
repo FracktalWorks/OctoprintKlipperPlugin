@@ -65,6 +65,13 @@
                   data-bind="text:$root.klipperFilesViewModel.currentPath"></span></small></div>
           </div>
 
+          <div class="klipper-docs-link">
+            <a href="https://www.klipper3d.org/Config_Reference.html" target="_blank" rel="noopener"
+              title="{{ _('Open the Klipper configuration reference') }}">
+              <i class="fas fa-book"></i> {{ _('Klipper Documentation') }}
+            </a>
+          </div>
+
           <div class="scroll-wrapper klipper-vertResize"
             data-bind="foreach:$root.klipperFilesViewModel.filesAndFolders">
             <div class="entry"

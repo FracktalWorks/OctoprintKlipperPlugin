@@ -682,9 +682,7 @@ class KlipperPlugin(
         expands ``~`` and environment variables and normalizes the result.
         """
         if baseconfig is None:
-            baseconfig = (
-                self._settings.get(["configuration", "baseconfig"]) or ""
-            )
+            baseconfig = self._settings.get(["configuration", "baseconfig"]) or ""
         baseconfig = os.path.expandvars(os.path.expanduser(baseconfig))
         return os.path.normpath(baseconfig)
 
@@ -773,9 +771,7 @@ class KlipperPlugin(
                 self._settings.get(["configuration", "baseconfig"])
             )
             filename = SaveVariables.find_variables_filename(baseconfig)
-            variables = (
-                SaveVariables.read_variables(filename) if filename else None
-            )
+            variables = SaveVariables.read_variables(filename) if filename else None
             used_by = {}
             for macro in KlipperMacroParser.parse_macros(baseconfig):
                 for name in SaveVariables.extract_variable_names(
@@ -1459,11 +1455,11 @@ class KlipperPlugin(
                 if not futureName or not octoprint.filemanager.valid_file_type(
                     futureName
                 ):
-                    flask.abort(
-                        409, description="Can't create file, invalid file type"
-                    )
+                    flask.abort(409, description="Can't create file, invalid file type")
 
-            futureFullPath = self._file_manager.join_path(target, futurePath, futureName)
+            futureFullPath = self._file_manager.join_path(
+                target, futurePath, futureName
+            )
             try:
                 added_file = self._file_manager.add_file(
                     target,

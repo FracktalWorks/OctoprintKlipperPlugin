@@ -77,9 +77,7 @@ $(function () {
             self.klipperViewModel.showPopUp(
               "error",
               gettext("Save Variable"),
-              response.data && response.data.message
-                ? response.data.message
-                : gettext("Could not save variable"),
+              response.data && response.data.message ? response.data.message : gettext("Could not save variable"),
             );
           } else {
             self.klipperViewModel.showPopUp(
@@ -91,10 +89,7 @@ $(function () {
           }
         })
         .fail(function (response) {
-          self.klipperViewModel.consoleMessage(
-            "error",
-            "saveVariable failed: " + _.escape(response.responseText),
-          );
+          self.klipperViewModel.consoleMessage("error", "saveVariable failed: " + _.escape(response.responseText));
           self.klipperViewModel.showPopUp("error", gettext("Save Variable"), gettext("Could not save variable"));
         })
         .always(function () {

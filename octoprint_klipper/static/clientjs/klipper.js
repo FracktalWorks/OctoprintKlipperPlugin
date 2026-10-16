@@ -41,20 +41,11 @@
   };
 
   OctoKlipperClient.prototype.saveVariable = function (name, value, opts) {
-    return this.base.simpleApiCommand(
-      "klipper",
-      "saveVariable",
-      { name: name, value: value },
-      opts
-    );
+    return this.base.simpleApiCommand("klipper", "saveVariable", { name: name, value: value }, opts);
   };
 
   OctoKlipperClient.prototype.saveParsedMacros = function (parsedMacros, opts) {
-    return this.base.postJson(
-      this.url + "config/saveParsedMacros",
-      { parsedMacros: parsedMacros },
-      opts
-    );
+    return this.base.postJson(this.url + "config/saveParsedMacros", { parsedMacros: parsedMacros }, opts);
   };
 
   OctoKlipperClient.prototype.restartKlipper = function (opts) {
