@@ -1,10 +1,9 @@
 ---
+name: test-octoklipper-against-octoprint-2-0
 description: "Test the OctoKlipper plugin against OctoPrint 2.0 in the workspace venv: reinstall the plugin, start OctoPrint, and verify it loads without errors."
-name: "Test OctoKlipper against OctoPrint 2.0"
+disable-model-invocation: true
 argument-hint: "Optional: extra checks to run"
-agent: "agent"
 ---
-
 Test the OctoKlipper plugin against OctoPrint 2.0.0rc5 in the workspace venv:
 
 1. Reinstall the plugin in editable mode:
