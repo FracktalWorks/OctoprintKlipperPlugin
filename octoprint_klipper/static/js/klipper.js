@@ -48,11 +48,45 @@ $(function () {
       },
     });
 
-    // Connect/disconnect using the plugin's configured port. OctoPrint 1.11's
-    // stock connect reads selectedPort/selectedBaudrate observables; 2.0's
-    // reads the port from the connection form's DOM inputs, which don't exist
-    // because this plugin replaces the connection panel — so send the port
-    // directly as a connector parameter.
+    // OctoPrint 2.0 only: the connector selector. The panel renders the
+    // connection_options block itself (see klipper_sidebar.jinja2), so these
+    // delegate to the connection view model's own observables.
+    self.connectionConnectorOptions = ko.pureComputed(function () {
+      var cs = self.connectionState;
+      return cs.connectorOptions ? cs.connectorOptions() : [];
+    });
+
+    self.connectionSelectedConnector = ko.pureComputed({
+      read: function () {
+        var cs = self.connectionState;
+        return cs.selectedConnector ? cs.selectedConnector() : undefined;
+      },
+      write: function (value) {
+        var cs = self.connectionState;
+        if (cs.selectedConnector) cs.selectedConnector(value);
+      },
+    });
+
+    // Collect the connector parameters from the rendered connection_options
+    // block, using the same DOM contract as OctoPrint's own connect():
+    // inputs carrying data-connection-parameter inside
+    // #connection_options_<connector>.
+    var collectConnectorParameters = function (connector) {
+      var parameters = {};
+      var container = $("#connection_options_" + connector);
+      if (!container.length) return parameters;
+      container.find("input[data-connection-parameter], select[data-connection-parameter], textarea[data-connection-parameter]")
+        .each(function () {
+          parameters[$(this).data("connection-parameter")] = $(this).val();
+        });
+      return parameters;
+    };
+
+    // Connect/disconnect. OctoPrint 1.11's stock connect reads
+    // selectedPort/selectedBaudrate observables; 2.0's reads the connector
+    // parameters from the DOM. The panel now renders the connection_options
+    // block, so the DOM path works — but the serial connector's port input is
+    // not part of that block, so fall back to the plugin's configured port.
     self.connect = function () {
       var cs = self.connectionState;
       if (cs.isErrorOrClosed()) {
@@ -60,16 +94,20 @@ $(function () {
           // OctoPrint 1.11: the stock connect uses selectedPort/selectedBaudrate
           cs.connect();
         } else {
-          // OctoPrint 2.0: connector-based connect; send the configured port
+          // OctoPrint 2.0: connector-based connect
           var connector = cs.selectedConnector();
           if (!connector) {
             cs.connect();
             return;
           }
+          var parameters = collectConnectorParameters(connector);
+          if (connector === "serial" && !parameters.port) {
+            parameters.port = self.settings.settings.plugins.klipper.connection.port();
+          }
           OctoPrint.connection
             .connect({
               connector: connector,
-              parameters: { port: self.settings.settings.plugins.klipper.connection.port() },
+              parameters: parameters,
               printerProfile: cs.currentProfile(),
               autoconnect: false,
             })
@@ -410,6 +448,14 @@ $(function () {
 
     self.showSaveVariablesDialog = function () {
       var dialog = $("#klipper_save_variables_dialog");
+      dialog.modal({
+        show: "true",
+        backdrop: "static",
+      });
+    };
+
+    self.showSetupWizardDialog = function () {
+      var dialog = $("#klipper_setup_wizard_dialog");
       dialog.modal({
         show: "true",
         backdrop: "static",

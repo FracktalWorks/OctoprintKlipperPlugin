@@ -552,8 +552,95 @@ Example Response:
     {
       "status": "success",
       "data": {
-        "latest_octoklipper_remote_tag": "v0.4rc4"
+        "latest_octoklipper_remote_tag": "v0.5rc1"
       }
+    }
+
+---
+
+## Setup Wizard Endpoints
+
+These back the Setup Wizard dialog. See
+[setup-wizard.md](setup-wizard.md) for what each check means.
+
+### Endpoint: `plugin/klipper/getSetupWizardState`
+
+Method: POST
+
+Returns the full read-only diagnostic snapshot. Writes nothing.
+
+Example Response (abridged):
+
+    {
+      "environment": { "octoprint_version": "2.0.0rc6", "is_linux": true },
+      "klipper": { "path": "~/klipper/", "installed": true },
+      "config": {
+        "config_path": "~/klipper_configs",
+        "config_path_exists": true,
+        "baseconfig": "~/printer.cfg",
+        "baseconfig_exists": true,
+        "tree": ["printer.cfg", "mcu.cfg"],
+        "missing_includes": [],
+        "sections": { "mcu": "printer.cfg" },
+        "missing_sections": [
+          {
+            "section": "virtual_sdcard",
+            "present": false,
+            "severity": "warning",
+            "reason": "...",
+            "docs": "https://www.klipper3d.org/Config_Reference.html#virtual_sdcard"
+          }
+        ]
+      },
+      "serial": {
+        "port": "/tmp/printer",
+        "port_exists": false,
+        "additional_ports": ["/tmp/printer"],
+        "additional_ports_path": ["plugins", "serial_connector", "additionalPorts"],
+        "check": { "registered": true, "port_exists": false, "ok": false, "suggestion": null },
+        "error_handling": { "current": "disconnect", "expected": "cancel", "ok": false }
+      },
+      "connection": { "replace_connection_panel": true, "connector": "serial" },
+      "moonraker": {
+        "installed": false,
+        "version": null,
+        "experimental": true,
+        "warning": "...",
+        "port": 7125
+      },
+      "expected_status_error": "Unable to open config file"
+    }
+
+### Endpoint: `plugin/klipper/applySetupWizard`
+
+Method: POST
+
+Applies one whitelisted fix. Only the three named actions are accepted and every
+value is validated, so this cannot be used as a generic settings writer.
+
+Request Body:
+
+    {
+      "action": "addPort"
+    }
+
+| Parameter | Type | Description |
+|---|---|---|
+| `action` | string | One of `addPort`, `setErrorHandling`, `setPort` |
+| `value` | string | Required for `setErrorHandling` (`disconnect`/`cancel`/`ignore`) and `setPort` (an absolute path) |
+
+Example Response:
+
+    {
+      "status": "ok",
+      "path": ["plugins", "serial_connector", "additionalPorts"]
+    }
+
+An unknown action or an invalid value returns:
+
+    {
+      "status": "error",
+      "message": "Unknown setup wizard action."
     }
 
 ---

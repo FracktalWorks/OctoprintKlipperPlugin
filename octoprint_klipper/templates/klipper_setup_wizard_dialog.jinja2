@@ -1,0 +1,114 @@
+<div id="klipper_setup_wizard_dialog" class="modal hide fade" tabindex="-1" role="dialog"
+    aria-labelledby="klipper_setup_wizard_dialog_label" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h3>{{ _('Setup Wizard') }}</h3>
+    </div>
+    <div class="modal-body">
+        <p class="help-block">
+            {{ _('This wizard checks whether OctoPrint can talk to your Klipper host and offers to fix what it can. It never changes your printer.cfg.') }}
+        </p>
+
+        <div class="klipper-wizard-toolbar">
+            <button class="btn btn-small" data-bind="click: refresh, enable: !loading()">
+                <i class="icon-refresh" data-bind="css: { 'klipper-spin': loading() }"></i>
+                {{ _('Re-check') }}
+            </button>
+            <span class="klipper-wizard-summary" data-bind="text: summary, css: summaryClass"></span>
+        </div>
+
+        <div class="klipper-danger" style="margin-top: 6px;" data-bind="visible: loadError">
+            <span data-bind="text: loadError"></span>
+        </div>
+
+        <!-- ko foreach: steps -->
+        <div class="klipper-wizard-step" data-bind="css: 'klipper-wizard-' + status">
+            <div class="klipper-wizard-step-head">
+                <i data-bind="attr: { 'class': icon }"></i>
+                <span class="klipper-wizard-step-title" data-bind="text: title"></span>
+                <span class="klipper-wizard-step-badge" data-bind="text: statusText, css: 'klipper-wizard-badge-' + status"></span>
+            </div>
+            <div class="klipper-wizard-step-body">
+                <span data-bind="text: detail"></span>
+                <!-- ko if: docs -->
+                <a data-bind="attr: { href: docs }" target="_blank" rel="noopener">{{ _('Documentation') }}</a>
+                <!-- /ko -->
+            </div>
+
+            <!-- ko if: items().length -->
+            <ul class="klipper-wizard-items">
+                <!-- ko foreach: items -->
+                <li data-bind="css: 'klipper-wizard-item-' + severity">
+                    <code data-bind="text: label"></code>
+                    <span data-bind="text: text"></span>
+                </li>
+                <!-- /ko -->
+            </ul>
+            <!-- /ko -->
+
+            <!-- ko if: warning -->
+            <div class="klipper-wizard-warning" data-bind="text: warning"></div>
+            <!-- /ko -->
+
+            <!-- ko if: expectedError -->
+            <div class="klipper-wizard-expected">
+                <strong>{{ _('This error message is expected — it proves the connection works:') }}</strong>
+                <pre data-bind="text: expectedError"></pre>
+                <span class="help-block">{{ _('Klipper reports this when it cannot read printer.cfg. Seeing it in the Terminal after sending "status" means OctoPrint reached Klipper over the virtual serial port.') }}</span>
+            </div>
+            <!-- /ko -->
+
+            <!-- ko if: isConnectVerify -->
+            <div class="klipper-wizard-connect-verify">
+                <button class="btn btn-small btn-primary"
+                    data-bind="click: $root.connectAndVerify, enable: !$root.connectVerify.running() && $root.loginState.isUser()">
+                    <i class="icon-plug" data-bind="css: { 'klipper-spin': $root.connectVerify.running() }"></i>
+                    <span data-bind="text: $root.connectVerifyButtonLabel"></span>
+                </button>
+
+                <!-- ko if: $root.connectVerify.outcome() === 'matched' -->
+                <div class="klipper-wizard-expected" style="margin-top: 6px;">
+                    <strong>{{ _('Success — the expected response was received. The connection works.') }}</strong>
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: $root.connectVerify.outcome() === 'timeout' -->
+                <div class="klipper-wizard-warning" style="margin-top: 6px;">
+                    {{ _('No response was received in time. Check that the Klipper service is running and the configured port is correct.') }}
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: $root.connectVerify.outcome() === 'connect-failed' -->
+                <div class="klipper-wizard-warning" style="margin-top: 6px;">
+                    {{ _('Could not connect in time. Check the serial port and connection settings above.') }}
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: $root.connectVerify.outcome() === 'printing' -->
+                <div class="klipper-wizard-warning" style="margin-top: 6px;">
+                    {{ _('A print is currently in progress, so "status" was not sent — it would queue behind the print and could take a long time to respond.') }}
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: $root.connectVerify.lines().length -->
+                <pre class="klipper-wizard-terminal-output" data-bind="text: $root.connectVerify.lines().join('\n')"></pre>
+                <!-- /ko -->
+            </div>
+            <!-- /ko -->
+
+            <!-- ko if: fixLabel -->
+            <div class="klipper-wizard-fix">
+                <button class="btn btn-small btn-primary" data-bind="click: $root.applyFix, enable: !$root.applying()">
+                    <i class="icon-wrench"></i>
+                    <span data-bind="text: fixLabel"></span>
+                </button>
+                <span class="help-block" data-bind="text: fixHint"></span>
+            </div>
+            <!-- /ko -->
+        </div>
+        <!-- /ko -->
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal">{{ _('Close') }}</button>
+    </div>
+</div>

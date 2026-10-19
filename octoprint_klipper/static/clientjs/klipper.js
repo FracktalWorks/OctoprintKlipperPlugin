@@ -44,6 +44,18 @@
     return this.base.simpleApiCommand("klipper", "saveVariable", { name: name, value: value }, opts);
   };
 
+  OctoKlipperClient.prototype.getSetupWizardState = function (opts) {
+    return this.base.simpleApiCommand("klipper", "getSetupWizardState", {}, opts);
+  };
+
+  OctoKlipperClient.prototype.applySetupWizard = function (action, value, opts) {
+    var data = { action: action };
+    if (value !== undefined) {
+      data.value = value;
+    }
+    return this.base.simpleApiCommand("klipper", "applySetupWizard", data, opts);
+  };
+
   OctoKlipperClient.prototype.saveParsedMacros = function (parsedMacros, opts) {
     return this.base.postJson(this.url + "config/saveParsedMacros", { parsedMacros: parsedMacros }, opts);
   };

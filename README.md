@@ -15,13 +15,17 @@ This plugin assists in managing and monitoring the [Klipper](https://github.com/
 ## Features
 
 - Simplified connection dialog.
+- Setup Wizard that diagnoses the OctoPrint ↔ Klipper connection and offers one-click fixes.
 - Restart Host and MCU processes.
 - User defineable macro buttons with optional parameter dialogs.
+- Gcode macros parsed from `printer.cfg` (and its `[include]`d files), with groups, ordering and dedicated sidebar panels.
+- Save Variables dialog for the `[save_variables]` file configured in `printer.cfg`.
 - Assisted bed leveling wizard with user definable probe points.
 - PID Tuning Dialog.
 - Dialog to set a coordinate offset for future GCODE move commands.
 - Message log displaying messages from Klipper prepended with "//" and "!!".
-- Klipper configuration editor
+- Live `klippy.log` tail for watching stalls and diagnostics in real time.
+- Klipper configuration editor with Monaco, syntax checking and config backups.
 - Performance graph displaying key parameters extracted from the Klipper logs.
 
 ## Installation
@@ -37,6 +41,10 @@ or install manually using this URL / zip:
 ## Update
 
 OctoPrint will inform you when a new version of this plugin becomes available.
+
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the latest release summary and
+[docs/release_note_0.5.0.md](docs/release_note_0.5.0.md) for the 0.5.0 release
+candidate notes.
 
 ## Configuration
 

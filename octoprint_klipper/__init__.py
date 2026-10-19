@@ -39,6 +39,7 @@ from octoprint.server.util.flask import get_json_command_from_request
 from octoprint.server import NO_CONTENT
 from octoprint.settings import valid_boolean_trues
 from octoprint.util import get_formatted_size, is_hidden_path, time_this
+from octoprint.util import version as octoprint_version
 
 try:
     from octoprint.plugins.serial_connector.serial_comm import parse_firmware_line
@@ -61,6 +62,7 @@ from octoprint_klipper.config_tools import CfgUtils as cfg_utils
 from .modules import KlipperLogAnalyzer
 from .modules import KlipperMacroParser
 from .modules import SaveVariables
+from .modules import SetupWizard
 
 MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5Mb
 _FILE_DESTINATION = "klipper_configs"
@@ -138,16 +140,94 @@ class KlipperPlugin(
         self.storage.name = "Klipper Konfigs"
         self._file_manager.add_storage(_FILE_DESTINATION, self.storage)
 
+    def _additional_ports_path(self):
+        """Settings path holding OctoPrint's additional serial ports.
+
+        OctoPrint 2.0 moved the serial settings to ``plugins.serial_connector.*``
+        and installs a read-only compatibility overlay for the legacy
+        ``serial.*`` paths, so writes to the old path are silently dropped
+        ("Prevented write of ... to deprecated settings path"). Writing to the
+        wrong path means the Klipper virtual serial port never appears in
+        OctoPrint's port list.
+        """
+        return SetupWizard.additional_ports_path(
+            octoprint_version.get_octoprint_version_string()
+        )
+
+    def _klipper_service_state(self):
+        """Query the Klipper host service state.
+
+        Klipper's host software is Linux-only, so on other platforms there is no
+        service to query and this returns ``unknown`` without running anything.
+        ``systemctl is-active`` is read-only and needs no privileges.
+
+        Returns:
+            str: ``running``, ``stopped``, ``failed`` or ``unknown``.
+        """
+        if platform.system() != "Linux":
+            return "unknown"
+
+        name = SetupWizard.parse_service_name(
+            self._settings.get(["configuration", "restart_service_system_command"])
+        )
+        if not name:
+            name = SetupWizard.KLIPPER_SERVICE_CANDIDATES[0]
+
+        output, _success = extra.execute_command(
+            self, "systemctl is-active {}".format(name)
+        )
+        return SetupWizard.interpret_service_state(output)
+
+    def _get_error_handling(self):
+        """OctoPrint's "what to do on an unhandled printer error" setting.
+
+        OctoPrint 2.0 exposes a single ``errorHandling`` enum. 1.11 has no such
+        setting — it stores the same intent as two booleans — so the value is
+        derived from those.
+
+        Returns:
+            str: ``disconnect``, ``cancel`` or ``ignore``.
+        """
+        if SetupWizard.is_octoprint_2(
+            octoprint_version.get_octoprint_version_string()
+        ):
+            return self._settings.global_get(
+                ["plugins", "serial_connector", "errorHandling"]
+            )
+        return SetupWizard.error_handling_from_settings(
+            self._settings.global_get(["serial", "disconnectOnErrors"]),
+            self._settings.global_get(["serial", "ignoreErrorsFromFirmware"]),
+        )
+
+    def _set_error_handling(self, value):
+        """Write OctoPrint's error handling setting, version-appropriately.
+
+        On 1.11 this writes the two booleans that encode the same intent;
+        ``serial.errorHandling`` does not exist there, which is why writing it
+        appeared to succeed but never took effect.
+        """
+        if SetupWizard.is_octoprint_2(
+            octoprint_version.get_octoprint_version_string()
+        ):
+            self._settings.global_set(
+                ["plugins", "serial_connector", "errorHandling"], value
+            )
+        else:
+            for key, boolean in SetupWizard.error_handling_to_settings(value).items():
+                self._settings.global_set(["serial", key], boolean)
+        self._settings.save()
+
     def on_after_startup(self):
         klipper_port = self._settings.get(["connection", "port"])
-        additional_ports = self._settings.global_get(["serial", "additionalPorts"])
+        ports_path = self._additional_ports_path()
+        additional_ports = self._settings.global_get(ports_path) or []
         self._octoklipper_debug = self._settings.get_boolean(
             ["configuration", "debug_logging"]
         )
 
         if klipper_port not in additional_ports:
             additional_ports.append(klipper_port)
-            self._settings.global_set(["serial", "additionalPorts"], additional_ports)
+            self._settings.global_set(ports_path, additional_ports)
             self._settings.save()
             logger.log_info(
                 self,
@@ -380,6 +460,12 @@ class KlipperPlugin(
                 custom_bindings=True,
             ),
             dict(
+                type="generic",
+                name="Setup Wizard",
+                template="klipper_setup_wizard_dialog.jinja2",
+                custom_bindings=True,
+            ),
+            dict(
                 type="tab",
                 name="Klipper",
                 template="klipper_tab_main.jinja2",
@@ -477,6 +563,7 @@ class KlipperPlugin(
                 "js/klipper_editor.js",
                 "js/klipper_files.js",
                 "js/klipper_save_variables.js",
+                "js/klipper_setup_wizard.js",
             ],
             clientjs=["clientjs/klipper.js"],
             css=["css/klipper.css"],
@@ -637,6 +724,8 @@ class KlipperPlugin(
             getKlipperMacros=[],
             getSaveVariables=[],
             saveVariable=["name", "value"],
+            getSetupWizardState=[],
+            applySetupWizard=["action"],
         )
 
     def _resolve_logpath(self, logpath=None):
@@ -685,6 +774,159 @@ class KlipperPlugin(
             baseconfig = self._settings.get(["configuration", "baseconfig"]) or ""
         baseconfig = os.path.expandvars(os.path.expanduser(baseconfig))
         return os.path.normpath(baseconfig)
+
+    def _get_setup_wizard_state(self):
+        """Build the setup wizard's read-only diagnostic snapshot.
+
+        Everything the wizard displays is derived here so the frontend stays
+        dumb. No settings are written by this method.
+        """
+        config_path = self._resolve_config_path()
+        baseconfig = self._resolve_baseconfig()
+        baseconfig_exists = os.path.isfile(baseconfig)
+        klipper_path = SetupWizard.resolve_path(
+            self._settings.get(["configuration", "klipper_path"])
+        )
+
+        sections = {}
+        missing_includes = []
+        tree = []
+        if baseconfig_exists:
+            sections = SetupWizard.collect_sections(baseconfig)
+            tree = [
+                os.path.relpath(path, config_path)
+                if config_path and path.startswith(config_path)
+                else path
+                for path, _content in SetupWizard.iter_config_tree(baseconfig)
+            ]
+            missing_includes = SetupWizard.find_missing_includes(baseconfig)
+
+        klipper_port = self._settings.get(["connection", "port"])
+        ports_path = self._additional_ports_path()
+        additional_ports = self._settings.global_get(ports_path) or []
+        port_exists = os.path.exists(os.path.expanduser(klipper_port or ""))
+
+        candidates = []
+        modern = os.path.expanduser(SetupWizard.MODERN_SERIAL_PORT)
+        if os.path.exists(modern):
+            candidates.append(SetupWizard.MODERN_SERIAL_PORT)
+
+        error_handling = self._get_error_handling()
+
+        # Klipper's host software is Linux-only. On other platforms a klipper
+        # directory may be a source checkout that can never actually run, so the
+        # host check reports that rather than a misleading "found".
+        klipper_path_exists = os.path.isdir(klipper_path)
+        klipper_host = SetupWizard.check_klipper_host(
+            platform.system(),
+            klipper_path,
+            klipper_path_exists,
+            self._klipper_service_state(),
+        )
+
+        moonraker_info = self._plugin_manager.get_plugin_info(
+            SetupWizard.MOONRAKER_CONNECTOR_ID
+        )
+
+        return dict(
+            environment=dict(
+                octoprint_version=octoprint_version.get_octoprint_version_string(),
+                platform=platform.system(),
+                is_linux=platform.system() == "Linux",
+            ),
+            klipper=dict(
+                # Expand ~ and env vars: the setting is stored as typed, and
+                # extra.folder_exists() does a raw isdir() with no expansion.
+                path=klipper_path,
+                installed=klipper_path_exists,
+                supported=klipper_host["supported"],
+                service_state=klipper_host["service_state"],
+                check=klipper_host,
+            ),
+            config=dict(
+                config_path=config_path,
+                config_path_exists=os.path.isdir(config_path),
+                baseconfig=baseconfig,
+                baseconfig_exists=baseconfig_exists,
+                tree=tree,
+                missing_includes=missing_includes,
+                sections=sections,
+                missing_sections=SetupWizard.check_required_sections(sections),
+            ),
+            serial=dict(
+                port=klipper_port,
+                port_exists=port_exists,
+                additional_ports=additional_ports,
+                additional_ports_path=ports_path,
+                check=SetupWizard.check_serial_port(
+                    klipper_port,
+                    additional_ports,
+                    port_exists,
+                    candidates=candidates,
+                ),
+                error_handling=SetupWizard.check_error_handling(error_handling),
+            ),
+            connection=dict(
+                replace_connection_panel=self._settings.get_boolean(
+                    ["connection", "replace_connection_panel"]
+                ),
+                connector=self._settings.global_get(
+                    ["printerConnection", "preferred", "connector"]
+                ),
+            ),
+            moonraker=SetupWizard.check_moonraker(moonraker_info),
+            expected_status_error=SetupWizard.EXPECTED_STATUS_ERROR,
+        )
+
+    def _apply_setup_wizard(self, data):
+        """Apply one whitelisted wizard fix.
+
+        Only the three named actions are accepted, and every value is
+        validated, so this cannot be used as a generic settings writer.
+        """
+        action = data.get("action")
+
+        if action == "addPort":
+            klipper_port = self._settings.get(["connection", "port"])
+            if not klipper_port or not os.path.isabs(
+                os.path.expanduser(klipper_port)
+            ):
+                return flask.jsonify(
+                    status="error",
+                    message=gettext("The configured serial port is not an absolute path."),
+                )
+            ports_path = self._additional_ports_path()
+            additional_ports = self._settings.global_get(ports_path) or []
+            if klipper_port not in additional_ports:
+                additional_ports.append(klipper_port)
+                self._settings.global_set(ports_path, additional_ports)
+                self._settings.save()
+            return flask.jsonify(status="ok", path=ports_path)
+
+        if action == "setErrorHandling":
+            value = data.get("value")
+            if value not in ("disconnect", "cancel", "ignore"):
+                return flask.jsonify(
+                    status="error",
+                    message=gettext("Invalid error handling value."),
+                )
+            self._set_error_handling(value)
+            return flask.jsonify(status="ok", value=value)
+
+        if action == "setPort":
+            value = data.get("value")
+            if not value or not os.path.isabs(os.path.expanduser(value)):
+                return flask.jsonify(
+                    status="error",
+                    message=gettext("The serial port must be an absolute path."),
+                )
+            self._settings.set(["connection", "port"], value)
+            self._settings.save()
+            return flask.jsonify(status="ok", value=value)
+
+        return flask.jsonify(
+            status="error", message=gettext("Unknown setup wizard action.")
+        )
 
     def on_api_command(self, command, data):
         if command == "listLogFiles":
@@ -743,6 +985,10 @@ class KlipperPlugin(
                 path=resolved,
                 exists=os.path.isfile(resolved),
             )
+        elif command == "getSetupWizardState":
+            return flask.jsonify(self._get_setup_wizard_state())
+        elif command == "applySetupWizard":
+            return self._apply_setup_wizard(data)
         elif command == "getKlipperMacros":
             # Honour the "Parse macros from printer.cfg" setting server-side
             # so the config tree (and its includes) is only walked when

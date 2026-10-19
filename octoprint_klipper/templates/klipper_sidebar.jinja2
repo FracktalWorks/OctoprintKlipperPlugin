@@ -1,3 +1,40 @@
+{#
+  OctoPrint 2.0 renders connector options (the "Connection Type" selector plus
+  each connector's own parameters, e.g. Moonraker's host/port/apikey) ONLY inside
+  the core sidebar/connection/connection.jinja2. Because this plugin replaces
+  that panel, those inputs would otherwise never be rendered and connecting to a
+  non-serial connector would send empty parameters.
+
+  So we render the block ourselves here. The markup mirrors the core template
+  exactly, because OctoPrint's connection view model depends on the DOM
+  contract: doOnAllInputsForConnector() looks up #connection_options_<connector>
+  and collects the [data-connection-parameter] inputs inside it.
+
+  OctoPrint 1.11 has no connection_options templates at all, so the whole block
+  is skipped there and the panel stays as it was.
+#}
+{% if templates.connection_options is defined %}
+<div id="connection_options_wrapper">
+  <label for="connection_option">{{ _('Connection Type') }}</label>
+  <select id="connection_option" class="connection_parameter" data-test-id="connection-connector"
+    data-bind="options: connectionConnectorOptions, optionsText: 'name', optionsValue: 'connector', value: connectionSelectedConnector, css: {disabled: !connectionState.isErrorOrClosed()}, enable: connectionState.isErrorOrClosed() && loginState.isUser()"></select>
+
+  {% for key in templates.connection_options.order %}
+  {% set entry, data = templates.connection_options.entries[key] %}
+  <div id="connection_options_{{ data.connector }}_wrapper"
+    data-bind="visible: connectionSelectedConnector() == '{{ data.connector }}'">
+    {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+    <div id="connection_options_{{ data.connector }}">
+      {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}
+      {% include data.template ignore missing %}
+      {% endtry %}
+    </div>
+    {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 <div class="control-group">
   <div class="controls">
     <label for="connection_printers"

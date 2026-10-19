@@ -22,6 +22,16 @@
           </div>
         </div>
       </div>
+      <div class="control-group">
+        <div class="control-label">{{ _('Setup Wizard') }}</div>
+        <div class="controls">
+          <button type="button" class="btn" data-bind="click: klipperViewModel.showSetupWizardDialog">
+            <i class="icon-magic"></i> {{ _('Run Setup Wizard') }}
+          </button>
+          <span
+            class="klipper-help-inline">{{ _('Checks whether OctoPrint can talk to your Klipper host and offers to fix what it can.') }}</span>
+        </div>
+      </div>
       <div class="control-group klipper-items-center">
         <div class="control-label">{{ _('Replace Connection Panel') }}</div>
         <div class="controls klipper-flex klipper-items-center">

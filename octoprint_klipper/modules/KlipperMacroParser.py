@@ -159,6 +159,10 @@ def _read_file(path):
     return ""
 
 
+# Public alias: other modules (e.g. SetupWizard) read config files the same way.
+read_config_file = _read_file
+
+
 def _parse_macro_section(lines, section_name, source_file):
     """Extract a macro dict from a ``[gcode_macro NAME]`` section's lines."""
     name = section_name.strip()
@@ -200,6 +204,45 @@ def _parse_macro_section(lines, section_name, source_file):
     )
 
 
+def iter_config_tree(baseconfig_path):
+    """Walk a Klipper config tree, yielding every file reachable from the base.
+
+    Starts at ``baseconfig_path`` (printer.cfg) and follows ``[include ...]``
+    directives depth-first, with cycle protection. Includes are resolved
+    relative to the directory of the file that contains the directive
+    (matching Klipper), and wildcards are supported.
+
+    Args:
+        baseconfig_path (str): absolute path to the base config (printer.cfg).
+
+    Yields:
+        tuple: ``(realpath, content)`` for the base config and each included
+        file, in file/definition order. Yields nothing when the base config
+        does not exist.
+    """
+    if not baseconfig_path or not os.path.isfile(baseconfig_path):
+        return
+
+    seen = set()
+
+    def _walk(path):
+        real = os.path.realpath(path)
+        if real in seen:
+            return
+        seen.add(real)
+        content = _read_file(real)
+        yield real, content
+        file_dir = os.path.dirname(real)
+        for _line_no, line in _iter_config_lines(content):
+            inc = _INCLUDE_RE.match(line)
+            if not inc:
+                continue
+            for inc_path in _resolve_include(inc.group(1), file_dir):
+                yield from _walk(inc_path)
+
+    yield from _walk(baseconfig_path)
+
+
 def parse_macros(baseconfig_path):
     """Parse all gcode macros from a Klipper config tree.
 
@@ -221,6 +264,11 @@ def parse_macros(baseconfig_path):
     seen_files = set()
     macros = []
 
+    # NOTE: this walk is deliberately NOT iter_config_tree(). Macros must be
+    # collected in *inline* order — an [include] is expanded at the exact point
+    # it appears, so a macro defined in an included file can precede one defined
+    # later in the including file. iter_config_tree() yields whole files
+    # depth-first, which is what the setup wizard needs but would reorder macros.
     def _walk(path):
         real = os.path.realpath(path)
         if real in seen_files:
