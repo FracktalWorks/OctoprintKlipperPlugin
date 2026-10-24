@@ -4,6 +4,7 @@
     <li><a href="#macros" data-toggle="tab" data-profile-type="klipper-macros">{{ _('Macros') }}</a></li>
     <li><a href="#level" data-toggle="tab" data-profile-type="klipper-bed">{{ _('Bed Leveling') }}</a></li>
     <li><a href="#update" data-toggle="tab" data-profile-type="klipper-update">{{ _('Klipper Update') }}</a></li>
+    <li><a href="#klipper-config" data-toggle="tab" data-profile-type="klipper-config">{{ _('Klipper Configuration') }}</a></li>
   </ul>
   <div class="tab-content">
     <!-- Basics -->
@@ -509,6 +510,47 @@
       </div>
     </div>
 
+
+    <!-- Klipper Configuration Tab: the config files of the configured folder, opened in the config editor -->
+    <div class="tab-pane" id="klipper-config">
+      <h3 class="text-center m-0">{{ _('Klipper Configuration') }}</h3>
+      <p class="text-center muted">{{ _('Folder:') }}
+        <code data-bind="text: settings.settings.plugins.klipper.configuration.config_path"></code></p>
+      <div class="text-center" style="margin-bottom: 10px;">
+        <button type="button" class="btn btn-primary"
+          data-bind="visible: klipperViewModel.hasPermKo('CONFIG'), click: editBaseConfig, enable: baseConfigFile">
+          <i class="fas fa-file-code"></i> {{ _('Edit') }} <span data-bind="text: baseConfigName"></span></button>
+        <button type="button" class="btn" data-bind="click: refreshConfigFiles">
+          <i class="fas fa-sync"></i> {{ _('Refresh') }}</button>
+      </div>
+      <table class="table table-condensed table-hover">
+        <thead>
+          <tr>
+            <th>{{ _('File') }}</th>
+            <th>{{ _('Size') }}</th>
+            <th>{{ _('Modified') }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody data-bind="foreach: configFiles">
+          <tr>
+            <td><a href="javascript:void(0)" data-bind="text: display || name, click: $parent.editConfigFile"></a></td>
+            <td data-bind="text: formatSize(size)"></td>
+            <td data-bind="text: formatTimeAgo(date), attr: {title: formatDate(date)}"></td>
+            <td class="text-right">
+              <button type="button" class="btn btn-mini"
+                data-bind="visible: $parent.klipperViewModel.hasPermKo('CONFIG'), click: $parent.editConfigFile"
+                title="{{ _('Edit') }}"><i class="fas fa-edit"></i> {{ _('Edit') }}</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="text-center muted" data-bind="visible: configFiles().length === 0">
+        {{ _('No config files found in this folder.') }}</p>
+      <p class="text-center muted" data-bind="visible: hiddenBackupCount() > 0">
+        <span data-bind="text: hiddenBackupCount"></span>
+        {{ _('automatic SAVE_CONFIG backups (printer-YYYYMMDD_HHMMSS.cfg) are not listed.') }}</p>
+    </div>
 
     <!-- Klipper Update Tab-->
     <div class="tab-pane" id="update">

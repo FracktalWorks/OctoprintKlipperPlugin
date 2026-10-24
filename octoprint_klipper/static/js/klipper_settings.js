@@ -303,6 +303,62 @@ $(function () {
       self.macros(self.settings.settings.plugins.klipper.macros());
     };
 
+    // Klipper Configuration tab: config files of the configured folder, opened in the editor
+    var SAVE_CONFIG_BACKUP = /^printer-\d{8}_\d{6}\.cfg$/;
+
+    var configFileItems = function () {
+      var files = self.klipperEditorViewModel.klipperFilesViewModel;
+      var items = (files && files.allItems()) || [];
+      return ko.utils.arrayFilter(items, function (item) {
+        return item.type !== "folder";
+      });
+    };
+
+    self.baseConfigName = ko.pureComputed(function () {
+      return self.settings.settings.plugins.klipper.configuration.baseconfig().split("/").pop();
+    });
+
+    self.configFiles = ko.pureComputed(function () {
+      var base = self.baseConfigName();
+      return ko.utils
+        .arrayFilter(configFileItems(), function (item) {
+          return !SAVE_CONFIG_BACKUP.test(item.name);
+        })
+        .sort(function (a, b) {
+          if (a.name === base) return -1;
+          if (b.name === base) return 1;
+          return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+        });
+    });
+
+    self.hiddenBackupCount = ko.pureComputed(function () {
+      return configFileItems().length - self.configFiles().length;
+    });
+
+    self.baseConfigFile = ko.pureComputed(function () {
+      return ko.utils.arrayFirst(self.configFiles(), function (item) {
+        return item.name === self.baseConfigName();
+      });
+    });
+
+    self.editConfigFile = function (data) {
+      self.klipperEditorViewModel.loadFile(data);
+    };
+
+    self.editBaseConfig = function () {
+      if (self.baseConfigFile()) {
+        self.editConfigFile(self.baseConfigFile());
+      }
+    };
+
+    self.refreshConfigFiles = function () {
+      self.klipperEditorViewModel.klipperFilesViewModel.requestData({ force: true });
+    };
+
+    self.onSettingsShown = function () {
+      self.refreshConfigFiles();
+    };
+
     self.onUserSettingsBeforeSave = function () {
       self.saveMacroList();
     };
