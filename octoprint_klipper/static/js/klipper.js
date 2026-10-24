@@ -206,6 +206,8 @@ $(function () {
     };
 
     self.checkForKlipperUpdate = function () {
+      // Fracktal build: Klipper Update is removed (klipper_IDEX is updated by the deploy tooling)
+      return;
       if (self.checkingUpdate()) return;
       if (self.printerState.isPrinting()) {
         self._showPopUp("Check Update", {

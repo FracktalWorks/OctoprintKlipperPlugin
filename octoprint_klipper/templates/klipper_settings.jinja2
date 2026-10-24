@@ -3,7 +3,6 @@
     <li><a href="#basic" data-toggle="tab" data-profile-type="klipper-basic">{{ _('Basic') }}</a></li>
     <li><a href="#macros" data-toggle="tab" data-profile-type="klipper-macros">{{ _('Macros') }}</a></li>
     <li><a href="#level" data-toggle="tab" data-profile-type="klipper-bed">{{ _('Bed Leveling') }}</a></li>
-    <li><a href="#update" data-toggle="tab" data-profile-type="klipper-update">{{ _('Klipper Update') }}</a></li>
     <li><a href="#klipper-config" data-toggle="tab" data-profile-type="klipper-config">{{ _('Klipper Configuration') }}</a></li>
   </ul>
   <div class="tab-content">
@@ -550,107 +549,6 @@
       <p class="text-center muted" data-bind="visible: hiddenBackupCount() > 0">
         <span data-bind="text: hiddenBackupCount"></span>
         {{ _('automatic SAVE_CONFIG backups (printer-YYYYMMDD_HHMMSS.cfg) are not listed.') }}</p>
-    </div>
-
-    <!-- Klipper Update Tab-->
-    <div class="tab-pane" id="update">
-      <h3 class="text-center m-0">{{ _('Updates') }}</h3>
-      <div class="control-group">
-        <div class="control-label">{{ _('Installed Host Version:') }}</div>
-        <div class="controls">
-          <p data-bind="text:klipperViewModel.host_version" title="{{ _('Version of the Klipper host')}}"></p>
-        </div>
-      </div>
-
-      <div class="control-group">
-        <div class="control-label">{{ _('Available Host Version:') }}</div>
-        <div class="controls">
-          <p data-bind="text:klipperViewModel.host_remote_version"
-            title="{{ _('Version of the available Klipper host')}}">
-          </p>
-          <p data-bind="text:klipperViewModel.host_remote_version_date"
-            title="{{ _('Release date of the available Klipper host')}}">
-          </p>
-        </div>
-      </div>
-
-      <div class="control-group">
-        <div class="control-label">{{ _('Url to Repository of Klipper:') }}</div>
-        <div class="controls">
-          <div class="klipper-reset-row">
-            <input type="text" class="span8"
-              data-bind="value: settings.settings.plugins.klipper.configuration.remote_host_git" />
-            <button type="button" class="btn btn-small"
-              data-bind="click: function() { klipperViewModel.checkForKlipperUpdate() }, enable: !klipperViewModel.checkingUpdate()"
-              title="{{ _('Check for Update') }}">
-              <i class="icon-refresh" data-bind="css: { 'klipper-spin': klipperViewModel.checkingUpdate() }"></i>
-            </button>
-            <button type="button" class="btn btn-mini klipper-reset-btn"
-              data-bind="click: function() { klipperViewModel.resetSetting('configuration', 'remote_host_git') }"
-              title="{{ _('Reset to default') }}">
-              <i class="icon-undo"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="control-group" data-bind="visible: !klipperViewModel.klipperInstalled()">
-        <div class="controls">
-          <button type="button" class="btn btn-block btn-small btn-primary"
-            data-bind="click: function() { klipperViewModel.requestInstall() }"
-            title="{{ _('This will clone and install the Klipper host software') }}">
-            {{ _("Install Klipper") }}
-          </button>
-        </div>
-      </div>
-
-      <div class="control-group">
-        <div class="controls">
-          <button type="button" class="btn btn-block btn-small"
-            data-bind="click: function() { klipperViewModel.requestUpdate() }"
-            title="{{ _('This will cause the host software to update and perform an internal reset') }}">
-            {{ _("Update Host") }}
-          </button>
-        </div>
-      </div>
-
-      <div class="control-group">
-        <div class="control-label">{{ _('Installed OctoKlipper Version:') }}</div>
-        <div class="controls">
-          <p data-bind="text:klipperViewModel.octoklipperInstalledVersion"
-            title="{{ _('Version of the OctoKlipper Plugin')}}"></p>
-        </div>
-      </div>
-
-      <div class="control-group">
-        <div class="control-label">{{ _('Available OctoKlipper Version:') }}</div>
-        <div class="controls">
-          <p data-bind="text:klipperViewModel.octoklipperReleasedVersionForOctoprint"
-            title="{{ _('Version of the available OctoKlipper Plugin')}}">
-          </p>
-        </div>
-      </div>
-
-      <div class="control-group">
-        <div class="control-label">{{ _('Url to Repository of OctoKlipper:') }}</div>
-        <div class="controls">
-          <div class="klipper-reset-row">
-            <input type="text" class="span8"
-              data-bind="value: settings.settings.plugins.klipper.configuration.remote_octoklipper_git" />
-            <button type="button" class="btn btn-small"
-              data-bind="click: function() {klipperViewModel.checkOctoKlipperUpdate() }, enable: !klipperViewModel.checkingOctoKlipperUpdate()"
-              title="{{ _('Check for Update') }}">
-              <i class="icon-refresh"
-                data-bind="css: { 'klipper-spin': klipperViewModel.checkingOctoKlipperUpdate() }"></i>
-            </button>
-            <button type="button" class="btn btn-mini klipper-reset-btn"
-              data-bind="click: function() { klipperViewModel.resetSetting('configuration', 'remote_octoklipper_git') }"
-              title="{{ _('Reset to default') }}">
-              <i class="icon-undo"></i>
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 

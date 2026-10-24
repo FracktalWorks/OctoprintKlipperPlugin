@@ -62,6 +62,16 @@ from .modules import KlipperLogAnalyzer
 MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5Mb
 _FILE_DESTINATION = "klipper_configs"
 
+
+def _klipper_update_disabled():
+    return flask.make_response(
+        flask.jsonify(
+            status="error",
+            error=dict(message="Klipper install/update is disabled in the Fracktal build"),
+        ),
+        410,
+    )
+
 # Set here the actual settings version
 # The automatic migration process needs this
 SETTINGS_VERSION = 7
@@ -224,11 +234,11 @@ class KlipperPlugin(
                 debug_logging=False,
                 debugging=False,
                 ignore_throttled=False,
-                klipper_path="~/klipper/",
-                config_path="~/klipper_configs",
-                baseconfig="~/printer.cfg",
+                klipper_path="~/klipper_IDEX/",
+                config_path="~/printer_data/config",
+                baseconfig="~/printer_data/config/printer.cfg",
                 openLastConfig=True,
-                logpath="/tmp/",
+                logpath="~/printer_data/logs",
                 restart_service_system_command="sudo service klipper restart",
                 restart_host_command="RESTART",
                 restart_firmware_command="FIRMWARE_RESTART",
@@ -604,6 +614,9 @@ class KlipperPlugin(
         logpath = os.path.expandvars(os.path.expanduser(logpath))
         if os.name == "nt" and logpath in ("/tmp/", "/tmp"):
             logpath = tempfile.gettempdir()
+        # the setting is a folder; accept a path to the log file itself as well
+        if logpath.endswith(".log") and not os.path.isdir(logpath):
+            logpath = os.path.dirname(logpath)
         return os.path.normpath(logpath)
 
     def on_api_command(self, command, data):
@@ -1401,6 +1414,9 @@ class KlipperPlugin(
     @octoprint.plugin.BlueprintPlugin.route("/update", methods=["POST"])
     @Permissions.PLUGIN_KLIPPER_CONFIG.require(403)
     def update_klipper(self):
+        # Fracktal build: Klipper (FracktalWorks/klipper_IDEX) is installed and updated by the
+        # deploy tooling, never from OctoPrint.
+        return _klipper_update_disabled()
         data = flask.request.json
         force = bool(data.get("forced", False))
 
@@ -1448,6 +1464,9 @@ class KlipperPlugin(
     @octoprint.plugin.BlueprintPlugin.route("/install", methods=["POST"])
     @Permissions.PLUGIN_KLIPPER_CONFIG.require(403)
     def install_klipper(self):
+        # Fracktal build: Klipper (FracktalWorks/klipper_IDEX) is installed and updated by the
+        # deploy tooling, never from OctoPrint.
+        return _klipper_update_disabled()
         if self._install_task is not None and self._install_task.is_alive():
             return flask.jsonify(
                 dict(
@@ -1522,6 +1541,9 @@ class KlipperPlugin(
     # MARK: get klipper version
     @octoprint.plugin.BlueprintPlugin.route("/checkKlipperUpdate", methods=["GET"])
     def check_Klipper_Update(self):
+        # Fracktal build: Klipper (FracktalWorks/klipper_IDEX) is installed and updated by the
+        # deploy tooling, never from OctoPrint.
+        return _klipper_update_disabled()
         response = extra.basedict()
         response["status"] = "success"
         installed = repo_handler.is_klipper_installed(self)
