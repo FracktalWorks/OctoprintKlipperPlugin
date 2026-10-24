@@ -46,6 +46,43 @@ def retrieve_git_tag(self, source_path):
     return "" + tag + "-" + count + "", True
 
 
+def _klipper_path(self):
+    return os.path.normpath(
+        os.path.join(
+            os.path.expanduser(self._settings.get(["configuration", "klipper_path"])),
+            "",
+        )
+    )
+
+
+def _current_branch(self, source_path):
+    """Branch checked out in source_path, or None (detached HEAD / no repo)."""
+    branch, ok = extra.execute_command(
+        self, "git -C " + source_path + " rev-parse --abbrev-ref HEAD"
+    )
+    branch = branch.strip()
+    if not ok or not branch or branch == "HEAD":
+        return None
+    return branch
+
+
+def _remote_branch_head(self, remote):
+    """'<branch>@<sha8>' of the remote head of the branch the local Klipper is on.
+
+    Used when the Klipper repo has no release tags (FracktalWorks/klipper_IDEX),
+    so "Available Host Version" shows the newest commit of the same branch.
+    """
+    branch = _current_branch(self, _klipper_path(self))
+    if not branch:
+        return None
+    output, ok = extra.execute_command(
+        self, "git ls-remote --heads " + remote + " " + branch
+    )
+    if not ok or not output.strip():
+        return None
+    return branch + "@" + output.split()[0][:8]
+
+
 def retrieve_remote_git_tag(self, remote):
     # TODO Drop python2.7 support like a hot potatoe
     # Klipper Repo: https://github.com/Klipper3D/klipper.git
@@ -69,6 +106,10 @@ def retrieve_remote_git_tag(self, remote):
     cmd = "git ls-remote --exit-code --refs --tags " + remote
     output, status = extra.execute_command(self, cmd)
     if not status:
+        # exit code 2 = no tags at all
+        head = _remote_branch_head(self, remote)
+        if head:
+            return head, True
         return output, False
     logger.log_info(self, "Versionslist Cmd_Output:" + output, only_logging=True)
 
@@ -96,6 +137,11 @@ def retrieve_remote_git_tag(self, remote):
             "Unsorted VersionList: " + str(versions_list),
             only_logging=True,
         )
+    if not versions_list:
+        head = _remote_branch_head(self, remote)
+        if head:
+            return head, True
+        return str(gettext("No release tags in ")) + remote, False
     sorted_versions = sorted(versions_list, key=_version_sort_key)
     if self._octoklipper_debug:
         logger.log_info(
@@ -155,6 +201,18 @@ def retrieve_remote_git_tag_date(self, remote, tag):
         req = Request(url, headers={"User-Agent": "OctoKlipper"})
         with urlopen(req, timeout=10) as response:
             return json.loads(response.read().decode("utf-8"))
+
+    if "@" in tag:
+        try:
+            commit_data = _get_json(
+                "https://api.github.com/repos/{}/{}/commits/{}".format(
+                    owner, repo, tag.split("@")[1]
+                )
+            )
+            commit_date = commit_data.get("commit", {}).get("committer", {}).get("date", "")
+            return (commit_date[:10], True) if commit_date else ("", False)
+        except (OSError, ValueError, KeyError):
+            return "", False
 
     # Try the release API first (gives the release date directly)
     try:
@@ -217,7 +275,18 @@ def retrieve_git_version(self, source_path):
         # This is likely a shallow clone.  Resolve the tag and manually create
         # the version string
 
-        tag = retrieve_git_tag(self, source_path)
+        tag, tag_success = retrieve_git_tag(self, source_path)
+        if not tag_success:
+            # no release tags (e.g. FracktalWorks/klipper_IDEX): report branch@commit,
+            # in the same form as _remote_branch_head so the two can be compared
+            branch = _current_branch(self, source_path)
+            sha, _ = extra.execute_command(
+                self, "git -C " + source_path + " rev-parse --short=8 HEAD"
+            )
+            version = (branch + "@" if branch else "") + sha.strip()
+            if output.strip().endswith("-dirty"):
+                version += "-dirty"
+            return version, is_success
         return "t" + tag + "-g" + output + "-shallow", is_success
     return output, is_success
 
@@ -339,10 +408,26 @@ def update_klipper_host(self, tag, force=False):
     cmd = "git -C " + klipper_path + " fetch --all --tags"
     extra.execute_command(self, cmd)
 
-    [output, is_success] = git_checkout(self, klipper_path, tag, force)
-    if is_success:
-        [output, is_success] = git_pull(self, klipper_path, force)
+    if "@" in tag:
+        # no release tags: fast-forward the branch the printer is on, never reset it
+        return git_pull_branch(self, klipper_path, tag.split("@")[0], force)
+    # a release tag: check it out (upstream then ran `reset --hard origin/master`,
+    # which would throw away a fork's branch such as klipper_IDEX Production)
+    return git_checkout(self, klipper_path, tag, force)
 
+
+def git_pull_branch(self, klipper_path, branch, force):
+    if _current_branch(self, klipper_path) != branch:
+        return ["Klipper is not on branch " + branch + "; not updating", False]
+    if force:
+        cmd = "git -C " + klipper_path + " stash push -m 'stash before klipper pull'"
+        extra.execute_command(self, cmd)
+    cmd = "git -C " + klipper_path + " pull --ff-only origin " + branch
+    [output, is_success] = extra.execute_command(self, cmd)
+    if not is_success and re.search(
+        r"Your local changes to the following files would be overwritten by", output
+    ):
+        return ["uncommitted changes", False]
     return [output, is_success]
 
 
