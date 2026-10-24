@@ -1,0 +1,48 @@
+name: Fracktal release
+
+# Push a tag such as 0.4.1 from branch `production` (Stable channel) or `beta`
+# (Beta channel). The workflow checks that setup.py carries the same version and
+# publishes the GitHub Release that OctoPrint's Software Update offers
+# to Fracktal printers (see get_update_information in octoprint_klipper/__init__.py).
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Work out the release branch
+        id: branch
+        run: |
+          for b in production beta; do
+            if git branch -r --contains "$GITHUB_SHA" | grep -qx "  origin/$b"; then
+              echo "branch=$b" >> "$GITHUB_OUTPUT"; break
+            fi
+          done
+          test -s "$GITHUB_OUTPUT" || { echo "Tag $GITHUB_REF_NAME is on neither production nor beta"; exit 1; }
+
+      - name: Check version
+        run: |
+          grep -q "^plugin_version = \"$GITHUB_REF_NAME\"" setup.py \
+            || { echo "setup.py plugin_version does not match tag $GITHUB_REF_NAME"; exit 1; }
+
+      # No build step: setup.py imports octoprint_setuptools, and printers install from the
+      # tag's source archive (the `pip` URL in get_update_information), not from release assets.
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.branch.outputs.branch }}
+        run: |
+          flags=""
+          [ "$BRANCH" = "beta" ] && flags="--prerelease"
+          gh release create "$GITHUB_REF_NAME" \
+            --target "$BRANCH" --title "OctoKlipper (Fracktal) $GITHUB_REF_NAME" --generate-notes $flags

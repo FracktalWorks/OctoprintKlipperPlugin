@@ -75,7 +75,7 @@ def _git_version_suffix():
     return suffix
 
 
-plugin_version = "0.4" + _git_version_suffix()
+plugin_version = "0.4.1" + _git_version_suffix()
 
 plugin_description = """A plugin for OctoPrint to configure,control and monitor the Klipper 3D printer software."""
 
@@ -83,7 +83,7 @@ plugin_author = "thelastWallE"
 
 plugin_author_email = "thelastwalle.github@gmail.com"
 
-plugin_url = "https://github.com/thelastWallE/OctoprintKlipperPlugin"
+plugin_url = "https://github.com/FracktalWorks/OctoprintKlipperPlugin"
 
 plugin_license = "AGPLv3"
 

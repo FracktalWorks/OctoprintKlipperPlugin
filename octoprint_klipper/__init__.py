@@ -240,8 +240,8 @@ class KlipperPlugin(
                 parse_check=False,
                 fontsize=12,
                 hide_error_popups=False,
-                remote_host_git="https://github.com/Klipper3d/klipper.git",
-                remote_octoklipper_git="https://github.com/thelastWallE/OctoprintKlipperPlugin.git",
+                remote_host_git="https://github.com/FracktalWorks/klipper_IDEX.git",
+                remote_octoklipper_git="https://github.com/FracktalWorks/OctoprintKlipperPlugin.git",
             ),
         )
 
@@ -1776,17 +1776,17 @@ class KlipperPlugin(
                 displayVersion=self._plugin_version,
                 type="github_release",
                 current=self._plugin_version,
-                user="thelastWallE",
+                user="FracktalWorks",
                 repo="OctoprintKlipperPlugin",
-                pip="https://github.com/thelastWallE/OctoprintKlipperPlugin/archive/{target_version}.zip",
+                pip="https://github.com/FracktalWorks/OctoprintKlipperPlugin/archive/{target_version}.zip",
                 stable_branch=dict(
-                    name="Stable", branch="master", comittish=["master"]
+                    name="Stable", branch="production", comittish=["production"]
                 ),
                 prerelease_branches=[
                     dict(
-                        name="Release Candidate",
-                        branch="rc",
-                        comittish=["rc", "master"],
+                        name="Beta",
+                        branch="beta",
+                        comittish=["beta", "production"],
                     )
                 ],
             )
